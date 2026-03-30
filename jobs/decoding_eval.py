@@ -21,6 +21,17 @@ IMG_TO_DOMAIN = {
 }
 
 
+def _get_ground_truth_entry(ground_truth, domain):
+    if domain in ground_truth:
+        return ground_truth[domain]
+
+    normalized_domain = domain.replace(" ", "_")
+    if normalized_domain in ground_truth:
+        return ground_truth[normalized_domain]
+
+    raise KeyError(domain)
+
+
 def _recall_at_n(true_lb, pred_lb, n):
     if isinstance(true_lb, int):
         true_lb = [true_lb]
@@ -210,7 +221,8 @@ def main(
                 file_label = f"{task_name}_{vocabulary_label}"
 
                 domain = IMG_TO_DOMAIN[task_name]
-                task_true_idx = cognitiveatlas.get_task_idx_from_names(ground_truth[domain]["task"])
+                domain_ground_truth = _get_ground_truth_entry(ground_truth, domain)
+                task_true_idx = cognitiveatlas.get_task_idx_from_names(domain_ground_truth["task"])
 
                 task_out_fn = f"{file_label}_pred-task_{model}.csv"
                 task_prob_df = pd.read_csv(op.join(prediction_dir, task_out_fn))
@@ -224,8 +236,8 @@ def main(
                 concept_out_fn = f"{file_label}_pred-concept_{model}.csv"
                 process_out_fn = f"{file_label}_pred-process_{model}.csv"
 
-                concept_true_idx = cognitiveatlas.get_concept_idx_from_names(ground_truth[domain]["concept"])
-                process_true_idx = cognitiveatlas.get_process_idx_from_names(ground_truth[domain]["domain"])
+                concept_true_idx = cognitiveatlas.get_concept_idx_from_names(domain_ground_truth["concept"])
+                process_true_idx = cognitiveatlas.get_process_idx_from_names(domain_ground_truth["domain"])
 
                 concept_prob_df = pd.read_csv(op.join(prediction_dir, concept_out_fn))
                 process_prob_df = pd.read_csv(op.join(prediction_dir, process_out_fn))
