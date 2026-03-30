@@ -148,14 +148,14 @@ class CognitiveAtlas:
                 continue
 
             sel_tasks = sel_df["measuredBy"].values
-            indices = np.where(np.in1d(self.task_df["id"].values, sel_tasks))[0]
+            indices = np.where(np.isin(self.task_df["id"].values, sel_tasks))[0]
 
             self.concept_to_task_idxs.append(indices)
 
         self.process_to_concept_idxs = []
         for process in self.process_names:
             sel_df = self.concept_df.loc[self.concept_df["cognitive_process"] == process]
-            indices = np.where(np.in1d(self.concept_df["id"].values, sel_df["id"].values))[0]
+            indices = np.where(np.isin(self.concept_df["id"].values, sel_df["id"].values))[0]
 
             self.process_to_concept_idxs.append(indices)
 
@@ -167,7 +167,7 @@ class CognitiveAtlas:
                 continue
 
             sel_concepts = sel_df["id"].values
-            indices = np.where(np.in1d(self.concept_df["id"].values, sel_concepts))[0]
+            indices = np.where(np.isin(self.concept_df["id"].values, sel_concepts))[0]
 
             self.task_to_concept_idxs.append(indices)
 
@@ -176,11 +176,9 @@ class CognitiveAtlas:
             sel_concepts = concepts_to_tasks_df.loc[concepts_to_tasks_df["measuredBy"] == task][
                 "id"
             ].values
-            if task == "trm_550b54a8b30f4":
-                print(sel_concepts)
 
             sel_df = self.concept_df.loc[self.concept_df["id"].isin(sel_concepts)]
-            indices = np.where(np.in1d(self.process_ids, sel_df["id_concept_class"].values))[0]
+            indices = np.where(np.isin(self.process_ids, sel_df["id_concept_class"].values))[0]
 
             self.task_to_process_idxs.append(indices)
 
@@ -198,24 +196,24 @@ class CognitiveAtlas:
 
     def get_task_idx_from_names(self, names):
         if isinstance(names, str):
-            return np.where(np.in1d(self.task_names, names))[0][0]
+            return np.where(np.isin(self.task_names, names))[0][0]
 
-        return [np.where(np.in1d(self.task_names, task_name))[0][0] for task_name in names]
+        return [np.where(np.isin(self.task_names, task_name))[0][0] for task_name in names]
 
     def get_concept_idx_from_names(self, names):
         if isinstance(names, str):
-            return np.where(np.in1d(self.concept_names, names))[0][0]
+            return np.where(np.isin(self.concept_names, names))[0][0]
 
         return [
-            np.where(np.in1d(self.concept_names, concept_name))[0][0] for concept_name in names
+            np.where(np.isin(self.concept_names, concept_name))[0][0] for concept_name in names
         ]
 
     def get_process_idx_from_names(self, names):
         if isinstance(names, str):
-            return np.where(np.in1d(self.process_names, names))[0][0]
+            return np.where(np.isin(self.process_names, names))[0][0]
 
         return [
-            np.where(np.in1d(self.process_names, process_name))[0][0] for process_name in names
+            np.where(np.isin(self.process_names, process_name))[0][0] for process_name in names
         ]
 
     def get_task_names_from_idx(self, task_idx):

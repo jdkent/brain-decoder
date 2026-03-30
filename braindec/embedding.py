@@ -234,12 +234,18 @@ class ImageEmbedding:
         self.density = density
 
         if self.atlas == "difumo":
-            difumo = datasets.fetch_atlas_difumo(
-                dimension=self.dimension,
-                resolution_mm=2,
-                legacy_format=False,
-                data_dir=self.nilearn_dir,
-            )
+            difumo_kwargs = {
+                "dimension": self.dimension,
+                "resolution_mm": 2,
+                "data_dir": self.nilearn_dir,
+            }
+            try:
+                difumo = datasets.fetch_atlas_difumo(
+                    legacy_format=False,
+                    **difumo_kwargs,
+                )
+            except TypeError:
+                difumo = datasets.fetch_atlas_difumo(**difumo_kwargs)
             atlas_maps = difumo.maps
         else:
             # Implement other atlases
@@ -278,7 +284,11 @@ class ImageEmbedding:
             # Concat images to improve performance
             images = concat_imgs(images)
 
-        return self.masker.fit_transform(images)
+        embeddings = self.masker.fit_transform(images)
+        if embeddings.ndim == 1:
+            embeddings = embeddings[None, :]
+
+        return embeddings
 
     def __call__(self, images) -> np.ndarray:
         """
