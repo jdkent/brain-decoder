@@ -10,6 +10,16 @@ The reviewer response implies three kinds of work:
 2. Add missing analyses that were explicitly promised in the response letter.
 3. Package the outputs into figures, tables, and supplementary artifacts that map cleanly onto manuscript revisions.
 
+## Reflection Rule
+
+After each task in this plan is completed, write a short reflection before moving on to the next task. Each reflection should include:
+
+1. What worked.
+2. What did not work or remained ambiguous.
+3. The next checks or follow-up analyses still needed to fully answer the reviewer's question tied to that task.
+
+Treat these reflections as part of the deliverable for each task, not as optional notes.
+
 ## Current Repo Status
 
 The repository already contains partial scaffolding for several decoding analyses:

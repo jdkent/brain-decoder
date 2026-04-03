@@ -67,11 +67,13 @@ def _build_record_from_task(prediction_label, task_names, cognitiveatlas, datase
         if task_idxs
         else np.array([], dtype=int)
     )
+    concept_idx = concept_idx.astype(int, copy=False)
     domain_idx = np.unique(
         np.concatenate([cognitiveatlas.task_to_process_idxs[idx] for idx in task_idxs])
         if task_idxs
         else np.array([], dtype=int)
     )
+    domain_idx = domain_idx.astype(int, copy=False)
     concept_names = cognitiveatlas.get_concept_names_from_idx(concept_idx).tolist()
     domain_names = cognitiveatlas.get_process_names_from_idx(domain_idx).tolist()
     return {
@@ -143,6 +145,11 @@ def _load_mapping_records(
             raise ValueError(f"Row {row_idx} in {mapping_fn} does not define any task labels.")
 
         if concepts_column is None or domains_column is None:
+            if cognitiveatlas is None:
+                raise ValueError(
+                    "A CognitiveAtlas object is required when the mapping file does not define "
+                    "explicit concepts/domains columns."
+                )
             record = _build_record_from_task(
                 prediction_label,
                 task_names,
@@ -427,8 +434,28 @@ def main(
         sub_categories,
     ):
         reduced = source == "cogatlasred"
-        concept_to_process_fn = op.join(data_dir, "cognitive_atlas", "concept_to_process.json")
-        cognitiveatlas = build_cognitiveatlas(data_dir, reduced, concept_to_process_fn)
+        cognitiveatlas = None
+        if mapping_fn is not None:
+            mapping_preview_df = pd.read_csv(op.abspath(mapping_fn), nrows=1)
+            preview_concepts_column = _resolve_column(
+                mapping_preview_df,
+                mapping_concepts_column,
+                ["concepts", "concept", "true_concepts"],
+                required=False,
+            )
+            preview_domains_column = _resolve_column(
+                mapping_preview_df,
+                mapping_domains_column,
+                ["domains", "domain", "true_domains"],
+                required=False,
+            )
+            needs_cognitiveatlas = preview_concepts_column is None or preview_domains_column is None
+        else:
+            needs_cognitiveatlas = True
+
+        if needs_cognitiveatlas:
+            concept_to_process_fn = op.join(data_dir, "cognitive_atlas", "concept_to_process.json")
+            cognitiveatlas = build_cognitiveatlas(data_dir, reduced, concept_to_process_fn)
         model_name = model_id.split("/")[-1]
         vocabulary_label = (
             f"vocabulary-{source}_{category}-{sub_category}_embedding-{model_name}_section-{section}"
