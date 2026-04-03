@@ -3,6 +3,7 @@
 import argparse
 import os
 import os.path as op
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -13,6 +14,8 @@ OSF_URL = "https://osf.io/{}/download"
 DEFAULT_OSF_NODE = "dsj56"
 DEFAULT_PROVIDER = "osfstorage"
 CHUNK_SIZE = 1024 * 1024
+DEFAULT_MAX_RETRIES = 5
+DEFAULT_RETRY_BACKOFF_SECONDS = 2
 
 # Legacy term/classification files used by the old vocabulary fetcher.
 OSF_DICT = {
@@ -125,25 +128,64 @@ def get_data_dir(data_dir=None):
     return data_dir
 
 
-def _request_json(url, params=None, timeout=60):
-    response = requests.get(url, params=params, timeout=timeout)
-    response.raise_for_status()
-    return response.json()
+def _should_retry_request(error):
+    response = getattr(error, "response", None)
+    if response is None:
+        return True
+    if response.status_code == 403 and "osf" in response.url:
+        return True
+    return response.status_code >= 500
 
 
-def _download_to_file(url, destination, overwrite=False, timeout=60, chunk_size=CHUNK_SIZE):
+def _request_json(url, params=None, timeout=60, max_retries=DEFAULT_MAX_RETRIES):
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, params=params, timeout=timeout)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as error:
+            last_error = error
+            if attempt == max_retries - 1 or not _should_retry_request(error):
+                raise
+            time.sleep(DEFAULT_RETRY_BACKOFF_SECONDS**attempt)
+
+    raise last_error
+
+
+def _download_to_file(
+    url,
+    destination,
+    overwrite=False,
+    timeout=60,
+    chunk_size=CHUNK_SIZE,
+    max_retries=DEFAULT_MAX_RETRIES,
+):
     destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists() and not overwrite:
         return destination
 
     tmp_destination = destination.with_suffix(destination.suffix + ".part")
-    with requests.get(url, stream=True, timeout=timeout) as response:
-        response.raise_for_status()
-        with tmp_destination.open("wb") as file_obj:
-            for chunk in response.iter_content(chunk_size=chunk_size):
-                if chunk:
-                    file_obj.write(chunk)
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            with requests.get(url, stream=True, timeout=timeout) as response:
+                response.raise_for_status()
+                with tmp_destination.open("wb") as file_obj:
+                    for chunk in response.iter_content(chunk_size=chunk_size):
+                        if chunk:
+                            file_obj.write(chunk)
+            break
+        except requests.RequestException as error:
+            last_error = error
+            if tmp_destination.exists():
+                tmp_destination.unlink()
+            if attempt == max_retries - 1 or not _should_retry_request(error):
+                raise
+            time.sleep(DEFAULT_RETRY_BACKOFF_SECONDS**attempt)
+    else:
+        raise last_error
 
     tmp_destination.replace(destination)
     return destination
