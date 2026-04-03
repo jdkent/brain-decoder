@@ -1,6 +1,7 @@
 """Shared helpers for analysis and decoding jobs."""
 
 import argparse
+import ast
 import json
 import os.path as op
 
@@ -82,6 +83,64 @@ def get_source(reduced):
 def get_model_name(model_id):
     """Extract the short model name used in filenames."""
     return model_id.split("/")[-1]
+
+
+def strip_nii_suffix(path_or_name):
+    """Return a filename stem while preserving inner dots in `.nii.gz` names."""
+    filename = op.basename(path_or_name)
+    if filename.endswith(".nii.gz"):
+        return filename[:-7]
+    return op.splitext(filename)[0]
+
+
+def infer_prediction_label(path_or_name, delimiter="_", token_index=None):
+    """Infer the prediction label used in output filenames from an image filename."""
+    stem = strip_nii_suffix(path_or_name)
+    if token_index is None:
+        return stem
+
+    parts = stem.split(delimiter)
+    if token_index >= len(parts) or token_index < -len(parts):
+        raise ValueError(
+            f"Cannot extract token index {token_index} from {path_or_name!r} using delimiter {delimiter!r}."
+        )
+    return parts[token_index]
+
+
+def parse_name_list(value):
+    """Parse a CSV/JSON-ish field into a normalized list of label strings."""
+    if value is None:
+        return []
+
+    if isinstance(value, float) and np.isnan(value):
+        return []
+
+    if isinstance(value, np.ndarray):
+        value = value.tolist()
+
+    if isinstance(value, (list, tuple)):
+        return [str(item).strip() for item in value if str(item).strip()]
+
+    if isinstance(value, str):
+        normalized = value.strip()
+        if not normalized:
+            return []
+
+        if normalized[0] in {"[", "("}:
+            try:
+                parsed = ast.literal_eval(normalized)
+            except (SyntaxError, ValueError):
+                parsed = None
+            if isinstance(parsed, (list, tuple)):
+                return [str(item).strip() for item in parsed if str(item).strip()]
+
+        for delimiter in (";", "|", ","):
+            if delimiter in normalized:
+                return [item.strip() for item in normalized.split(delimiter) if item.strip()]
+
+        return [normalized]
+
+    return [str(value).strip()]
 
 
 def add_common_job_args(parser):
