@@ -124,15 +124,17 @@ Can this model be generalized across datasets during inference? For example, wou
 
 ### **Response**
 
-We agree that demonstrating cross-dataset generalization is essential. We already have preliminary decoding scripts and results for two additional datasets:
+We agree that demonstrating cross-dataset generalization is essential, and we have now completed this analysis on two additional NeuroVault datasets using the same reduced Cognitive Atlas evaluation interface as for HCP.
 
-1\. Individual Brain Charting (IBC) dataset: We have decoded IBC images from NeuroVault, which cover a broader range of cognitive tasks than HCP. Results will be included in the revised manuscript.
+1\. Individual Brain Charting (IBC) dataset: We decoded 1,608 IBC maps spanning 11 task families. In the reduced ontology benchmark, NiCLIP achieved task Recall@4 \= 15.67%, concept Recall@4 \= 10.38%, and domain Recall@2 \= 33.74% for the combined task-name+definition vocabulary. Using task names alone, NiCLIP achieved task Recall@4 \= 8.46%, concept Recall@4 \= 6.30%, and domain Recall@2 \= 40.55%. For comparison, on the task-only benchmark the association-based baselines scored 16.36% (GCLDA) and 7.34% (Neurosynth) task Recall@4.
 
-2\. Consortium for Neuropsychiatric Phenomics (CNP) dataset: We have evaluated NiCLIP on CNP tasks (BART, PAM encoding/retrieval, SCAP, Stop Signal, Task Switching), which differ substantially from HCP tasks.
+2\. Consortium for Neuropsychiatric Phenomics (CNP) dataset: We evaluated 130 CNP maps in the reduced ontology benchmark, spanning BART, PAM retrieval, SCAP, and Stop Signal tasks. In this harder transfer setting, NiCLIP achieved task Recall@4 \= 0.77%, concept Recall@4 \= 2.56%, and domain Recall@2 \= 20.77% for the combined vocabulary. With task names alone, performance was task Recall@4 \= 0.77%, concept Recall@4 \= 2.05%, and domain Recall@2 \= 6.54%. The task-only baselines scored 1.54% (GCLDA) and 3.08% (Neurosynth) task Recall@4. Task Switching remains available in the full ontology mapping, but is not part of the reduced Menuet et al. task set and was therefore excluded from the reduced evaluation.
+
+These cross-dataset results show that NiCLIP generalizes substantially better to IBC than to CNP. We interpret this as evidence that transfer depends strongly on ontology coverage and on how closely the external task paradigms resemble the task-evoked activation structure represented in the training corpus.
 
 Regarding the Natural Scenes Dataset (NSD), we note that NSD is a visual perception dataset where subjects view naturalistic images. NiCLIP was trained on CBMA data from the fMRI literature, which primarily covers task-based paradigms. The NSD paradigm (passive viewing of natural scenes) is substantially different from the activation patterns in our training data. Applying NiCLIP to NSD would likely reveal the model's capacity to identify visual perception-related concepts but may underperform for scene-specific content, since the training data does not include naturalistic viewing paradigms at scale. We will add this as a discussion point and, if feasible, include a preliminary evaluation.
 
-In the revision, we will include a new section (e.g., Section 2.5: "Cross-dataset generalization") reporting NiCLIP's decoding accuracy on IBC and CNP datasets, with discussion of the boundaries of generalizability.
+In the revision, we will include a new cross-dataset generalization subsection reporting these IBC and CNP results and discussing the boundaries of transfer.
 
 **Section: Introduction**  
 	**Pages 2-3**
@@ -228,13 +230,17 @@ Ideally, I would like to see a per-term accuracy score for as many terms as poss
 
 ### **Response**
 
-We agree this is important for understanding which cognitive terms NiCLIP can reliably decode. In the revision, we will:
+We agree this is important for understanding which cognitive terms NiCLIP can reliably decode, and we have now added a per-term analysis with a within-dataset permutation null baseline.
 
-1\. Add a per-term accuracy analysis. For each task in the reduced Cognitive Atlas vocabulary, we will compute the decoding accuracy across all available evaluation maps (HCP contrasts, IBC images, CNP tasks). This will be presented as a heatmap or bar chart showing per-task Recall@K, revealing which specific tasks are well-decoded and which are not.
+For the reduced cross-dataset benchmark:
 
-2\. Report the number of decodable concepts. We will explicitly state how many out of the total vocabulary terms achieve above-chance decoding performance (using a permutation-based null baseline).
+1\. IBC: In the combined vocabulary setting, 6/11 task terms, 17/30 concepts, and 6/9 domains were above chance. In the names-only setting, 4/11 task terms, 7/30 concepts, and 2/9 domains were above chance.
 
-3\. Analyze factors affecting per-term accuracy. We will investigate whether per-term accuracy correlates with (a) the number of training articles associated with a term, (b) the specificity of the brain activation pattern, or (c) the length/quality of the term definition.
+2\. CNP: In the combined vocabulary setting, 0/4 task terms and 0/5 domains were above chance, while 1/12 concepts ("recall") exceeded the permutation baseline. In the names-only setting, no task, concept, or domain terms were above chance.
+
+3\. The above-chance IBC task terms were concentrated in social, emotional, motor, and spatial paradigms rather than being uniformly distributed across the ontology. Examples include emotion processing fMRI task paradigm, emotional localizer fMRI task paradigm, motor fMRI task paradigm, social cognition (theory of mind) fMRI task paradigm, Social localizer fMRI task paradigm, and spatial localizer fMRI task paradigm.
+
+We will present these per-term results as a heatmap/bar chart in the revision and discuss the term-specific heterogeneity explicitly, rather than relying only on averaged benchmark scores.
 
 ## **Reviewer 2 Comment 2.1**
 
@@ -314,11 +320,11 @@ This is an important methodological concern. We address the potential circularit
 
 Regarding circularity: The Cognitive Atlas is a community-driven ontology developed independently of HCP. While some HCP tasks have corresponding entries in the Cognitive Atlas, the ontology was not designed specifically for HCP. The reduced Cognitive Atlas vocabulary we use (from Menuet et al., 2022\) contains tasks from diverse sources, not exclusively HCP. Furthermore, NiCLIP's training data consists of \~23,865 PubMed articles spanning the entire fMRI literature, not HCP-specific publications.
 
-Cross-dataset validation: As noted in our response to Reviewer 1 (point 2(5)), we will include decoding results on:  
-\- IBC dataset (Individual Brain Charting): a comprehensive dataset with multiple cognitive tasks not in HCP  
-\- CNP dataset (Consortium for Neuropsychiatric Phenomics): tasks include BART, Stop Signal, Task Switching, which are distinct from HCP tasks
+Cross-dataset validation: As noted in our response to Reviewer 1 (point 2(5)), we now include decoding results on:  
+\- IBC dataset (Individual Brain Charting): 1,608 reduced-ontology maps spanning 11 task families, with task Recall@4 \= 15.67% and domain Recall@2 \= 33.74% in the combined NiCLIP setting  
+\- CNP dataset (Consortium for Neuropsychiatric Phenomics): 130 reduced-ontology maps spanning BART, PAM retrieval, SCAP, and Stop Signal, with task Recall@4 \= 0.77% and domain Recall@2 \= 20.77% in the combined NiCLIP setting
 
-We already have decoding pipelines for both datasets (\`jobs/decoding\_ibc.py\`, \`jobs/decoding\_cnp.py\`). These results will be presented in a new Results subsection.  
+We now have runnable decoding pipelines for both datasets (\`jobs/decoding\_ibc.py\`, \`jobs/decoding\_cnp.py\`) and will present these results in a new Results subsection.  
  
 
 **Section: Materials and Methods**  
@@ -638,10 +644,14 @@ This is correct. Domain prediction is an easier classification problem:
 \- Tasks: \~400 categories (reduced CogAt)  
 \- Concepts: \~600 categories
 
-The higher domain Recall@2 reflects both the informativeness of the model and the smaller number of candidate categories. We will:  
-1\. Add a note explaining this structural difference.  
-2\. Report chance-level baselines for each level (Task: Recall@4 chance ≈ 4/400 \= 1%, Concept: Recall@4 chance ≈ 4/600 \= 0.67%, Domain: Recall@2 chance \= 2/10 \= 20%). This will contextualize the raw numbers more effectively.  
-3\. Report normalized accuracy (accuracy / chance) to enable fairer cross-level comparisons.
+The higher domain Recall@2 therefore reflects both model informativeness and the smaller candidate set. To address this directly, we now compute permutation-based null baselines within each dataset/configuration rather than relying only on structural chance.
+
+For example, in the reduced cross-dataset benchmark:
+1\. IBC combined: mean per-term hit@k was 0.201 for tasks versus a null mean of 0.101, 0.114 for concepts versus 0.055, and 0.284 for domains versus 0.221.
+2\. CNP combined: mean per-term hit@k was 0.010 for tasks versus 0.0017, 0.0239 for concepts versus 0.0122, and 0.247 for domains versus 0.297.
+3\. We also report normalized accuracy and the number of terms above chance. On IBC, 6/11 task terms, 17/30 concepts, and 6/9 domains were above chance in the combined setting, whereas on CNP only 1/12 concepts exceeded the null baseline.
+
+We will add a note in the manuscript explaining the structural difference between label levels and report both raw and chance-normalized scores.
 
 ## **Reviewer 3 Comment 9**
 
@@ -695,4 +705,3 @@ Revised to: \*"As a community-based ontology, these mappings reflect the opinion
 We understand the potential confusion with attention heads. In our architecture, "head" refers to modular network blocks (fully connected layers with activation, dropout, and normalization), not attention heads. We will revise the terminology to avoid confusion:
 
 \> \*"The text encoder consists of a projection block and two residual blocks, while the image encoder comprises three residual blocks. Each block contains a fully connected layer, GELU activation, dropout, and layer normalization. We use 'block' rather than 'head' to distinguish these architectural components from the attention heads in transformer models."\*
-
